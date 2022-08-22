@@ -1,6 +1,9 @@
 const can=document.querySelector("canvas")
-const w=300
-const h=300
+const npieces=document.querySelector('#npieces')
+const dx=100
+let n=npieces.value
+let w=npieces.value*dx
+let h=npieces.value*dx
 can.width=w
 can.height=h
 can.style.border="1px solid"
@@ -14,7 +17,7 @@ function loadPuzzle(src='owl.jpg'){
                 let context=canvas.getContext("2d")
                 context.drawImage(img,0,0)
                 const imgData=context.getImageData(0,0,w,h)
-                let puzzle=new Puzzle(imgData)
+                let puzzle=new Puzzle(imgData,n,n)
                 let dx=puzzle.dx
                 let dy=puzzle.dy
                 can.onclick=(e)=>{
@@ -65,9 +68,9 @@ function loadPuzzle(src='owl.jpg'){
     })
 }
 class Puzzle{
-    constructor(imgData,n=3,m=3){
-        this.dx=w/n>>0
-        this.dy=h/m>>0
+    constructor(imgData,n,m){
+        this.dx=dx
+        this.dy=dx
         this.n=n
         this.m=m
         this.imgData=imgData
@@ -87,7 +90,7 @@ class Puzzle{
         this.solved=false
         this.initTiles()
         this.initEmpty()
-        if (!this.isSolvable()) {
+        if (this.isSolvable()===false) {
             if (this.empty[0] === 0 && this.empty[1]<= 1) {
               this.swapTiles(this.m-2, this.n- 1, this.m - 1, this.n- 1);
             } else {
@@ -125,7 +128,7 @@ class Puzzle{
           var xj = j/this.m>>0;
           var yj = j%this.n;
           this.swapTiles(xi, yi, xj, yj);
-          --i;
+          i=i-1;
         }
     }
     swapTiles(j1, i1, j2, i2) {
@@ -143,25 +146,33 @@ class Puzzle{
         }
     }
     isSolvable() {
-        if (this.n% 2 == 1) {
-          return (this.sumInversions() % 2 == 0)
+        let ninversions=this.sumInversions() 
+        if (this.m% 2!==0) {
+          return ninversions % 2 == 0
         } else {
-          return ((this.sumInversions() + this.m - this.empty[0]-1) % 2 == 0)
+            let row=this.m - this.empty[0]
+            if (row%2==0){
+                return ninversions%2!==0
+            }else{
+                return ninversions%2===0
+            }
         }
     }
     countInversions(i, j) {
         let inversions=0
         if(this.board[i][j]!==null){
             let boardVal=this.board[i][j][0]
-            for(let y=i;y<this.m;y++){
-                for(let x=j;x<this.n;x++){
-                    let temp=this.board[y][x]
-                    if(temp!==null){
-                        if(temp[0]<boardVal){
-                            inversions+=1
-                        }
+            let n=i*this.n+j
+            while(n<this.n*this.m){
+                let y=n/this.m>>0
+                let x=n%this.n>>0
+                let temp=this.board[y][x]
+                if(temp!==null){
+                    if(boardVal>this.board[y][x][0]){
+                        inversions+=1
                     }
                 }
+                n+=1
             }
         }
         return inversions
@@ -190,3 +201,12 @@ class Puzzle{
     }
 }
 loadPuzzle("abcd.jpg")
+npieces.onchange=()=>{
+    n=npieces.value
+    w=dx*n
+    h=dx*n
+    can.width=w
+    can.height=h
+    ctx.clearRect(0,0,w,h)
+    loadPuzzle('abcd.jpg')
+}
